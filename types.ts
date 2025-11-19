@@ -49,9 +49,14 @@ export enum AppMode {
   ONLINE_TRANSLATOR = 'online_translator',
 }
 
-// Add global definition for window.aistudio to prevent TS/Runtime errors
+// Global type definitions to prevent build errors
 declare global {
+  interface AIStudio {
+    hasSelectedApiKey: () => Promise<boolean>;
+    openSelectKey: () => Promise<void>;
+  }
+
   interface Window {
-    aistudio?: any;
+    aistudio?: AIStudio;
   }
 }
