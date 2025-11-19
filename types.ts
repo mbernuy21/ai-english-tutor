@@ -48,3 +48,10 @@ export enum AppMode {
   SPANISH_TRANSLATOR = 'spanish_translator',
   ONLINE_TRANSLATOR = 'online_translator',
 }
+
+// Add global definition for window.aistudio to prevent TS/Runtime errors
+declare global {
+  interface Window {
+    aistudio?: any;
+  }
+}

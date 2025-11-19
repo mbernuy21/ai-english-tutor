@@ -30,16 +30,6 @@ export interface SetupLiveSessionParams {
   };
 }
 
-async function ensureApiKeySelected(): Promise<void> {
-  if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
-    const hasKey = await window.aistudio.hasSelectedApiKey();
-    if (!hasKey) {
-      alert("Please select your Gemini API key. This is required for some features like advanced video generation.");
-      await window.aistudio.openSelectKey();
-    }
-  }
-}
-
 export const setupLiveSession = async (
   params: SetupLiveSessionParams
 ): Promise<LiveClientType> => {

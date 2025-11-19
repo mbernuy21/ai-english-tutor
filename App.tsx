@@ -11,15 +11,27 @@ function App() {
   const [selectedTopic, setSelectedTopic] = useState<LearningTopic>(LearningTopic.GENERAL);
   const [appMode, setAppMode] = useState<AppMode>(AppMode.VOICE_TUTOR);
   const [isApiKeySelected, setIsApiKeySelected] = useState<boolean>(false);
+  const [isAiStudioEnvironment, setIsAiStudioEnvironment] = useState<boolean>(false);
 
   // Check for API key selection on mount
   useEffect(() => {
     const checkApiKey = async () => {
       if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
+        setIsAiStudioEnvironment(true);
         const hasKey = await window.aistudio.hasSelectedApiKey();
         setIsApiKeySelected(hasKey);
       } else {
-        setIsApiKeySelected(!!process.env.API_KEY);
+        setIsAiStudioEnvironment(false);
+        // Safety check: process might not be defined in all browser environments
+        let hasEnvKey = false;
+        try {
+          if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+            hasEnvKey = true;
+          }
+        } catch (e) {
+          console.warn("Could not access process.env:", e);
+        }
+        setIsApiKeySelected(hasEnvKey);
       }
     };
     checkApiKey();
@@ -40,13 +52,54 @@ function App() {
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600 p-4">
         <div className="bg-white rounded-xl shadow-2xl p-8 max-w-lg text-center">
           <h1 className="text-4xl font-extrabold text-gray-800 mb-6">Welcome to AI English Tutor!</h1>
-          <p className="text-lg text-gray-700 mb-8">
-            To start learning, please select your Google Gemini API Key.
-            This ensures secure access to the powerful AI models.
-          </p>
-          <Button onClick={handleSelectApiKey} variant="primary" className="text-xl py-3 px-8">
-            Select API Key
-          </Button>
+          
+          {isAiStudioEnvironment ? (
+            <>
+              <p className="text-lg text-gray-700 mb-8">
+                To start learning, please select your Google Gemini API Key.
+                This ensures secure access to the powerful AI models.
+              </p>
+              <Button onClick={handleSelectApiKey} variant="primary" className="text-xl py-3 px-8">
+                Select API Key
+              </Button>
+            </>
+          ) : (
+            <>
+               <div className="bg-amber-50 border-l-4 border-amber-500 p-4 mb-6 text-left">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-amber-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-amber-800">Configuration Required</h3>
+                    <div className="mt-2 text-sm text-amber-700">
+                      <p className="mb-2">
+                        API Key not detected. To run this app on Vercel:
+                      </p>
+                      <ol className="list-decimal pl-5 space-y-1">
+                        <li>Go to your Vercel Project Settings.</li>
+                        <li>Click on <strong>Environment Variables</strong>.</li>
+                        <li>Add Key: <code>API_KEY</code></li>
+                        <li>Add Value: Your Gemini API Key.</li>
+                        <li>Redeploy your application.</li>
+                      </ol>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <a 
+                href="https://aistudio.google.com/app/apikey" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-3 md:text-lg"
+              >
+                Get API Key
+              </a>
+            </>
+          )}
+
           <p className="mt-6 text-sm text-gray-500">
             For more details on API usage and billing, visit <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:underline">ai.google.dev/gemini-api/docs/billing</a>.
           </p>
