@@ -5,6 +5,7 @@ import SpanishTranslator from './components/SpanishTranslator.tsx';
 import OnlineTranslator from './components/OnlineTranslator.tsx';
 import { LearningLevel, LearningTopic, AppMode } from './types.ts';
 import Button from './components/Button.tsx';
+import { getApiKey } from './utils/env.ts';
 
 function App() {
   const [selectedLevel, setSelectedLevel] = useState<LearningLevel>(LearningLevel.BEGINNER);
@@ -22,16 +23,9 @@ function App() {
         setIsApiKeySelected(hasKey);
       } else {
         setIsAiStudioEnvironment(false);
-        // Safety check: process might not be defined in all browser environments
-        let hasEnvKey = false;
-        try {
-          if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-            hasEnvKey = true;
-          }
-        } catch (e) {
-          console.warn("Could not access process.env:", e);
-        }
-        setIsApiKeySelected(hasEnvKey);
+        // Use safe getter that checks various env locations
+        const key = getApiKey();
+        setIsApiKeySelected(!!key);
       }
     };
     checkApiKey();
@@ -43,7 +37,7 @@ function App() {
       setIsApiKeySelected(true);
       alert("Please ensure your API key has access to the Gemini API. Billing information: ai.google.dev/gemini-api/docs/billing");
     } else {
-      alert("API Key selection is not available in this environment. Please ensure process.env.API_KEY is configured.");
+      alert("API Key selection is not available in this environment. Please ensure environment variables are configured.");
     }
   };
 
@@ -91,26 +85,21 @@ function App() {
 
                <h3 className="font-bold text-gray-900 mb-4 flex items-center">
                   <span className="bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs mr-2">2</span>
-                  Configure Vercel
+                  Configure Vercel (Recommended)
                </h3>
                <div className="pl-8 text-sm text-gray-600 space-y-3">
-                  <p>Go to <strong>Settings</strong> &rarr; <strong>Environment Variables</strong> and enter exactly this:</p>
+                  <p>In Vercel Settings &rarr; Environment Variables, add <strong>BOTH</strong> of these to be safe (some frameworks require the VITE_ prefix):</p>
                   
-                  {/* Visual Guide for Input Fields */}
-                  <div className="bg-gray-100 p-3 rounded-md border border-gray-300">
-                    <div className="grid grid-cols-2 gap-4 mb-1">
-                        <label className="text-xs font-bold text-gray-500 uppercase">Key</label>
-                        <label className="text-xs font-bold text-gray-500 uppercase">Value</label>
+                  <div className="bg-gray-100 p-3 rounded-md border border-gray-300 space-y-2">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white border border-gray-300 p-2 rounded text-gray-900 font-mono text-sm font-bold">VITE_API_KEY</div>
+                        <div className="bg-white border border-gray-300 p-2 rounded text-gray-500 font-mono text-sm italic overflow-hidden text-ellipsis">AIzaSy... (Paste Key)</div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white border border-gray-300 p-2 rounded text-gray-900 font-mono text-sm select-all">API_KEY</div>
-                        <div className="bg-white border border-gray-300 p-2 rounded text-gray-500 font-mono text-sm italic overflow-hidden text-ellipsis">AIzaSy... (Paste your key here)</div>
+                        <div className="bg-white border border-gray-300 p-2 rounded text-gray-900 font-mono text-sm font-bold">API_KEY</div>
+                        <div className="bg-white border border-gray-300 p-2 rounded text-gray-500 font-mono text-sm italic overflow-hidden text-ellipsis">AIzaSy... (Paste Key)</div>
                     </div>
                   </div>
-
-                  <p className="text-xs text-gray-500 mt-2">
-                    Important: The left box MUST say <code className="font-bold text-gray-700">API_KEY</code>. The right box is for your long code.
-                  </p>
                   
                   <p className="mt-2">Then click <strong>Save</strong> and then <strong>Redeploy</strong>.</p>
                </div>

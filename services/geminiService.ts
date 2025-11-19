@@ -1,6 +1,7 @@
 import { GoogleGenAI, LiveServerMessage, Modality, Chat, GenerateContentResponse, Type } from "@google/genai";
 import { decode, decodeAudioData, encode, createBlob } from "../utils/audioUtils.ts";
-import { LearningLevel, LearningTopic, AppMode } from "../types.ts"; // Import AppMode
+import { LearningLevel, LearningTopic, AppMode } from "../types.ts";
+import { getApiKey } from "../utils/env.ts"; // Import safe key retriever
 import type { MutableRefObject } from 'react';
 
 export type LiveClientType = Awaited<ReturnType<GoogleGenAI['live']['connect']>>;
@@ -45,7 +46,11 @@ export const setupLiveSession = async (
     nextStartTimeRef,
   } = audioConfig;
   
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = getApiKey();
+  if (!apiKey) {
+      throw new Error("API Key not found. Please configure VITE_API_KEY or API_KEY.");
+  }
+  const ai = new GoogleGenAI({ apiKey: apiKey });
 
   let systemInstruction: string;
 
@@ -208,7 +213,11 @@ Start the conversation now based on the topic "${topic}".`;
 };
 
 export const createTextChat = (systemInstruction?: string): Chat => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = getApiKey();
+  if (!apiKey) {
+      throw new Error("API Key not found.");
+  }
+  const ai = new GoogleGenAI({ apiKey: apiKey });
   return ai.chats.create({
     model: 'gemini-2.5-flash',
     config: systemInstruction ? { systemInstruction } : undefined,
@@ -230,7 +239,11 @@ export const sendTextChatMessageStream = async (
 };
 
 export const checkGrammarAndCorrect = async (text: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = getApiKey();
+  if (!apiKey) {
+      throw new Error("API Key not found.");
+  }
+  const ai = new GoogleGenAI({ apiKey: apiKey });
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: `You are an AI grammar, spelling, and syntax checker. Review the following English text for any grammar, spelling, punctuation, or syntax errors. If errors are found, provide the fully corrected version of the text, followed by a clear, concise, and encouraging explanation for each specific correction. Explain *why* it was an error and *what* the correct rule is. If the text is perfect, respond with 'No errors found. Your text is perfectly written!'
@@ -247,11 +260,15 @@ ${text}
       thinkingConfig: { thinkingBudget: 100 }
     }
   });
-  return response.text;
+  return response.text || '';
 };
 
 export const generateSpeechForText = async (text: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = getApiKey();
+  if (!apiKey) {
+      throw new Error("API Key not found.");
+  }
+  const ai = new GoogleGenAI({ apiKey: apiKey });
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash-preview-tts",
     contents: [{ parts: [{ text: text }] }],
