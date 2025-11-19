@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Chat } from '@google/genai';
-import { createTextChat, sendTextChatMessageStream, checkGrammarAndCorrect } from '../services/geminiService.ts';
+import { createTextChat, sendTextChatMessageStream, checkGrammarAndCorrect, generateSpeechForText } from '../services/geminiService.ts';
 import { Message } from '../types.ts';
 import Button from './Button.tsx';
 import Spinner from './Spinner.tsx';
+import { decode, decodeAudioData } from '../utils/audioUtils.ts';
 
 interface TextChatProps {
   mode: 'text_chat' | 'grammar_check';
@@ -14,13 +15,34 @@ const TextChat: React.FC<TextChatProps> = ({ mode }) => {
   const [input, setInput] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [playingMessageIndex, setPlayingMessageIndex] = useState<number | null>(null);
 
   const chatRef = useRef<Chat | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  
+  // Audio refs for TTS
+  const outputAudioContextRef = useRef<AudioContext | null>(null);
+  const outputNodeRef = useRef<GainNode | null>(null);
+  const currentAudioSource = useRef<AudioBufferSourceNode | null>(null);
 
   const systemInstruction = mode === 'text_chat'
     ? `You are an AI English tutor named 'Professor Spark'. You are here to answer questions about English grammar, vocabulary, culture, or any general topic to help the user learn English. Provide clear, concise, and helpful responses. Always respond in English.`
     : `You are an AI grammar, spelling, and syntax checker. Your task is to review the user's provided English text for any grammar, spelling, punctuation, or syntax errors. If errors are found, provide the fully corrected version of the text, followed by a clear, concise, and encouraging explanation for each specific correction. Explain *why* it was an error and *what* the correct rule is. If the text is perfect, respond with 'No errors found. Your text is perfectly written!'`;
+
+  useEffect(() => {
+    // Initialize Audio Context
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+    outputAudioContextRef.current = ctx;
+    const gainNode = ctx.createGain();
+    gainNode.connect(ctx.destination);
+    outputNodeRef.current = gainNode;
+
+    return () => {
+      if (outputAudioContextRef.current) {
+        outputAudioContextRef.current.close();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     try {
@@ -135,6 +157,53 @@ const TextChat: React.FC<TextChatProps> = ({ mode }) => {
     }
   }, [input, isLoading, mode, chatRef]);
 
+  const handlePlayAudio = useCallback(async (text: string, index: number) => {
+    if (!outputAudioContextRef.current || !outputNodeRef.current) return;
+    if (playingMessageIndex === index) {
+        // Stop if clicking the same one
+        if (currentAudioSource.current) {
+            currentAudioSource.current.stop();
+            currentAudioSource.current = null;
+        }
+        setPlayingMessageIndex(null);
+        return;
+    }
+
+    // Stop any currently playing
+    if (currentAudioSource.current) {
+        currentAudioSource.current.stop();
+        currentAudioSource.current = null;
+    }
+
+    setPlayingMessageIndex(index);
+
+    try {
+        // Clean text for TTS (remove markdown mostly)
+        const cleanText = text.replace(/\*\*/g, '').replace(/### FEEDBACK ###[\s\S]*?### END FEEDBACK ###/, ''); // Speak only conversation part if mixed, or whole thing. For TextChat, usually whole thing is fine.
+        
+        const base64Audio = await generateSpeechForText(cleanText.substring(0, 500)); // Limit TTS length for performance
+        const audioBuffer = await decodeAudioData(
+            decode(base64Audio),
+            outputAudioContextRef.current,
+            24000,
+            1
+        );
+
+        const source = outputAudioContextRef.current.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(outputNodeRef.current);
+        source.onended = () => {
+            setPlayingMessageIndex(null);
+            currentAudioSource.current = null;
+        };
+        source.start(0);
+        currentAudioSource.current = source;
+    } catch (err) {
+        console.error("Error playing audio:", err);
+        setPlayingMessageIndex(null);
+    }
+  }, [playingMessageIndex]);
+
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
@@ -164,7 +233,7 @@ const TextChat: React.FC<TextChatProps> = ({ mode }) => {
             className={`flex mb-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
             <div
-              className={`max-w-3/4 p-3 rounded-lg shadow-md ${
+              className={`max-w-[85%] p-3 rounded-lg shadow-md relative ${
                 msg.role === 'user'
                   ? 'bg-indigo-600 text-white rounded-br-none'
                   : 'bg-gray-200 text-gray-800 rounded-bl-none'
@@ -176,7 +245,30 @@ const TextChat: React.FC<TextChatProps> = ({ mode }) => {
                     <span>{msg.text || 'Thinking...'}</span>
                 </div>
               ) : (
-                <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                <>
+                    <p className="leading-relaxed whitespace-pre-wrap pr-6">{msg.text}</p>
+                    {msg.role === 'ai' && (
+                        <button 
+                            onClick={() => handlePlayAudio(msg.text, index)}
+                            className={`absolute bottom-2 right-2 p-1 rounded-full transition-colors ${
+                                playingMessageIndex === index 
+                                ? 'text-indigo-600 bg-indigo-100' 
+                                : 'text-gray-500 hover:text-indigo-600 hover:bg-gray-300'
+                            }`}
+                            title="Listen"
+                        >
+                            {playingMessageIndex === index ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 animate-pulse" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clipRule="evenodd" />
+                                </svg>
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                            )}
+                        </button>
+                    )}
+                </>
               )}
             </div>
           </div>
