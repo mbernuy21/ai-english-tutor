@@ -22,7 +22,7 @@ export interface FeedbackItem {
   original: string;
   correction: string;
   explanation: string;
-  type: 'grammar' | 'pronunciation' | 'vocabulary';
+  type: 'grammar' | 'pronunciation' | 'vocabulary' | 'improvement';
 }
 
 export interface Message {

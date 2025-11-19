@@ -404,15 +404,23 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ config }) => {
                     
                     {/* Inline Feedback Card if available */}
                     {msg.role === 'ai' && msg.feedback && (
-                        <div className="mt-3 pt-3 border-t border-gray-200 bg-red-50 -mx-3 -mb-3 p-3 rounded-b-lg">
+                        <div className={`mt-3 pt-3 border-t ${msg.feedback.type === 'improvement' ? 'border-purple-200 bg-purple-50' : 'border-red-200 bg-red-50'} -mx-3 -mb-3 p-3 rounded-b-lg`}>
                              <div className="flex items-start">
-                                <span className="text-red-500 mr-2 mt-0.5">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <span className={`${msg.feedback.type === 'improvement' ? 'text-purple-500' : 'text-red-500'} mr-2 mt-0.5`}>
+                                    {msg.feedback.type === 'improvement' ? (
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                                      </svg>
+                                    ) : (
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                    </svg>
+                                      </svg>
+                                    )}
                                 </span>
                                 <div>
-                                    <p className="text-xs font-bold text-red-600 uppercase tracking-wider mb-1">Correction ({msg.feedback.type})</p>
+                                    <p className={`text-xs font-bold ${msg.feedback.type === 'improvement' ? 'text-purple-700' : 'text-red-600'} uppercase tracking-wider mb-1`}>
+                                        {msg.feedback.type === 'improvement' ? 'Native Suggestion' : `Correction (${msg.feedback.type})`}
+                                    </p>
                                     <p className="text-sm text-gray-600 line-through mb-1">{msg.feedback.original}</p>
                                     <p className="text-sm text-green-700 font-semibold mb-1">{msg.feedback.correction}</p>
                                     <p className="text-xs text-gray-500 italic">{msg.feedback.explanation}</p>
@@ -495,6 +503,7 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ config }) => {
                     {sessionNotes.map((note, i) => (
                         <div key={i} className="bg-white p-3 rounded-lg shadow border border-gray-100">
                             <span className={`inline-block px-2 py-1 rounded text-xs font-bold uppercase mb-2 ${
+                                note.type === 'improvement' ? 'bg-purple-100 text-purple-800' :
                                 note.type === 'grammar' ? 'bg-red-100 text-red-800' :
                                 note.type === 'pronunciation' ? 'bg-yellow-100 text-yellow-800' :
                                 'bg-blue-100 text-blue-800'
@@ -504,7 +513,9 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ config }) => {
                             <div className="space-y-1">
                                 <p className="text-xs text-gray-500">Original:</p>
                                 <p className="text-sm text-red-500 line-through bg-red-50 p-1 rounded">{note.original}</p>
-                                <p className="text-xs text-gray-500 mt-1">Correction:</p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    {note.type === 'improvement' ? 'Better way:' : 'Correction:'}
+                                </p>
                                 <p className="text-sm font-bold text-green-600 bg-green-50 p-1 rounded">{note.correction}</p>
                                 <p className="text-xs text-gray-600 italic mt-2 border-t pt-2">{note.explanation}</p>
                             </div>
