@@ -53,55 +53,53 @@ function App() {
              </div>
           </div>
 
-          <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Setup Required</h1>
-          <p className="text-gray-500 mb-8">To use the AI English Tutor, you need to connect your Google Gemini API Key.</p>
+          <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Configuración Requerida</h1>
+          <p className="text-gray-500 mb-8">Para usar el Tutor de Inglés IA, necesitas conectar tu Google Gemini API Key.</p>
           
           {isAiStudioEnvironment ? (
             <div className="space-y-4">
               <p className="text-lg text-gray-700">
-                You are in Google AI Studio. Simply click the button below to select your key.
+                Estás en Google AI Studio. Simplemente haz clic en el botón de abajo.
               </p>
               <Button onClick={handleSelectApiKey} variant="primary" className="w-full py-3 text-lg shadow-lg shadow-indigo-200">
-                Select API Key
+                Seleccionar API Key
               </Button>
             </div>
           ) : (
             <div className="text-left bg-gray-50 rounded-xl p-6 border border-gray-200">
                <h3 className="font-bold text-gray-900 mb-4 flex items-center">
                   <span className="bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs mr-2">1</span>
-                  Get your API Key
+                  Obtener tu API Key
                </h3>
                <div className="mb-6 pl-8">
-                  <p className="text-sm text-gray-600 mb-3">Generate a free API key from Google AI Studio.</p>
+                  <p className="text-sm text-gray-600 mb-3">Genera una llave gratuita en Google AI Studio.</p>
                   <a 
                     href="https://aistudio.google.com/app/apikey" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 transition-colors"
                   >
-                    Get API Key <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                    Obtener Key <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                   </a>
                </div>
 
                <h3 className="font-bold text-gray-900 mb-4 flex items-center">
                   <span className="bg-indigo-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs mr-2">2</span>
-                  Configure Vercel (Recommended)
+                  Configurar Vercel (Recomendado)
                </h3>
                <div className="pl-8 text-sm text-gray-600 space-y-3">
-                  <p>In Vercel Settings &rarr; Environment Variables, add <strong>BOTH</strong> of these to be safe (some frameworks require the VITE_ prefix):</p>
+                  <p>En <strong>Vercel Settings</strong> &rarr; <strong>Environment Variables</strong>, añade la siguiente variable:</p>
                   
                   <div className="bg-gray-100 p-3 rounded-md border border-gray-300 space-y-2">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white border border-gray-300 p-2 rounded text-gray-900 font-mono text-sm font-bold">VITE_API_KEY</div>
-                        <div className="bg-white border border-gray-300 p-2 rounded text-gray-500 font-mono text-sm italic overflow-hidden text-ellipsis">AIzaSy... (Paste Key)</div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white border border-gray-300 p-2 rounded text-gray-900 font-mono text-sm font-bold">API_KEY</div>
-                        <div className="bg-white border border-gray-300 p-2 rounded text-gray-500 font-mono text-sm italic overflow-hidden text-ellipsis">AIzaSy... (Paste Key)</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-2 items-center">
+                        <div className="bg-white border border-gray-300 p-2 rounded text-gray-900 font-mono text-sm font-bold select-all">VITE_API_KEY</div>
+                        <div className="bg-white border border-gray-300 p-2 rounded text-gray-500 font-mono text-sm italic overflow-hidden text-ellipsis">AIzaSy... (Pega tu Key aquí)</div>
                     </div>
                   </div>
                   
-                  <p className="mt-2">Then click <strong>Save</strong> and then <strong>Redeploy</strong>.</p>
+                  <p className="mt-2 text-xs bg-yellow-50 border border-yellow-200 p-2 rounded text-yellow-800">
+                    <strong>Nota:</strong> Después de guardar, debes ir a la pestaña <strong>Deployments</strong> y hacer clic en <strong>Redeploy</strong> para que funcione.
+                  </p>
                </div>
             </div>
           )}
